@@ -1,5 +1,5 @@
 # Thirdweb Deployment Script
-This script facilitates the deployment of ERC20, ERC721, and ERC1155 contracts on the Arbitrum Sepolia test network using the Thirdweb SDK.
+This script facilitates the deployment of ERC20, ERC721, and ERC1155 contracts on the Rootstock test network using the Thirdweb SDK.
 
 ### Features
 - Interactive CLI: Guides users to choose the contract type and input necessary parameters.
