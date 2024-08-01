@@ -1,66 +1,196 @@
 import { createThirdwebClient } from "thirdweb";
-import { arbitrumSepolia } from "thirdweb/chains";
-import { deployERC20Contract } from "thirdweb/deploys";
+import { defineChain } from "thirdweb/chains";
+import {
+  deployERC20Contract,
+  deployERC721Contract,
+  deployERC1155Contract,
+} from "thirdweb/deploys";
 import { privateKeyToAccount } from "thirdweb/wallets";
+import inquirer from "inquirer";
+import ora from "ora"; 
+
+// Define the blockchain network configuration for Rootstock Testnet
+const chain = defineChain({
+  id: 31,
+  name: "Rootstock Testnet",
+  shortName: "rootstock",
+  nativeCurrency: {
+    decimals: 18,
+    name: "Rootstock Bitcoin",
+    symbol: "tRBTC",
+  },
+  rpcUrls: {
+    default: { http: ["https://public-node.testnet.rsk.co"] },
+  },
+  blockExplorers: {
+    default: {
+      name: "RSK Explorer",
+      url: "https://explorer.testnet.rsk.co",
+    },
+  },
+  testnet: true,
+});
 
 // Access the secrets using process.env
 const clientId = process.env.clientId;
-const privateKey = process.env.nmonic;
+const privateKey = process.env.privateKey;
 
 if (!clientId || !privateKey) {
-  throw Error("Missing environment variables");
+  throw new Error("Missing environment variables");
 }
 
-/**
- * Create a Thirdweb client instance.
- * @param {Object} config - The configuration object for creating the client.
- * @param {string} config.clientId - The client ID used for authenticating with Thirdweb.
- * @returns {Object} - The Thirdweb client instance.
- */
-const client = createThirdwebClient({
-  clientId,
-});
+// Create a Thirdweb client instance
+const client = createThirdwebClient({ clientId });
 
-/**
- * Converts a private key to an account object.
- * @param {Object} config - The configuration object for the account.
- * @param {string} config.privateKey - The private key to convert into an account.
- * @param {Object} config.client - The Thirdweb client instance.
- * @returns {Object} - The account object containing address and key information.
- */
-const account = privateKeyToAccount({
-  privateKey,
-  client,
-});
+// Convert a private key to an account object
+const account = privateKeyToAccount({ privateKey, client });
 
-try {
-  /**
-   * Deploy an ERC20 contract to a specified blockchain network.
-   * @async
-   * @param {Object} config - The deployment configuration object.
-   * @param {Object} config.chain - The blockchain network where the contract will be deployed.
-   * @param {Object} config.client - The Thirdweb client instance.
-   * @param {Object} config.account - The account used to deploy the contract.
-   * @param {string} config.type - The type of contract to deploy (e.g., "TokenERC20").
-   * @param {Object} config.params - The parameters for the contract deployment.
-   * @param {string} config.params.name - The name of the ERC20 token.
-   * @param {string} config.params.description - The description of the token contract.
-   * @param {string} config.params.symbol - The symbol of the ERC20 token.
-   * @returns {Promise<string>} - The address of the deployed contract.
-   */
-  const contractAddress = await deployERC20Contract({
-    chain: arbitrumSepolia,
-    client,
-    account,
-    type: "TokenERC20",
-    params: {
-      name: "MyToken",
-      description: "My Token contract",
-      symbol: "MT",
-    },
-  });
+async function main() {
+  try {
+    // Prompt user to select the contract type
+    const { contractType } = await inquirer.prompt([
+      {
+        type: "list",
+        name: "contractType",
+        message: "Which type of contract would you like to deploy?",
+        choices: ["ERC20", "ERC721", "ERC1155"],
+      },
+    ]);
 
-  console.log(contractAddress);
-} catch (error) {
-  console.log(error);
+    let deploymentParams;
+
+    switch (contractType) {
+      case "ERC20":
+        deploymentParams = await inquirer.prompt([
+          {
+            type: "input",
+            name: "name",
+            message: "Enter the name of the ERC20 token:",
+          },
+          {
+            type: "input",
+            name: "symbol",
+            message: "Enter the symbol of the ERC20 token:",
+          },
+          {
+            type: "input",
+            name: "description",
+            message: "Enter a description for the ERC20 token:",
+          },
+        ]);
+
+        const spinner = ora("Deploying ERC20 contract...").start();
+        try {
+          const erc20Address = await deployERC20Contract({
+            chain,
+            client,
+            account,
+            type: "TokenERC20",
+            params: {
+              name: deploymentParams.name,
+              symbol: deploymentParams.symbol,
+              description: deploymentParams.description,
+            },
+          });
+
+          spinner.succeed(`ERC20 token deployed at address: ${erc20Address}`);
+        } catch (error) {
+          spinner.fail("Failed to deploy ERC20 contract");
+          throw error;
+        }
+        break;
+
+      case "ERC721":
+        deploymentParams = await inquirer.prompt([
+          {
+            type: "input",
+            name: "name",
+            message: "Enter the name of the ERC721 token:",
+          },
+          {
+            type: "input",
+            name: "symbol",
+            message: "Enter the symbol of the ERC721 token:",
+          },
+          {
+            type: "input",
+            name: "description",
+            message: "Enter a description for the ERC721 token:",
+          },
+        ]);
+
+        const spinnerERC721 = ora("Deploying ERC721 contract...").start();
+        try {
+          const erc721Address = await deployERC721Contract({
+            chain,
+            client,
+            account,
+            type: "DropERC721",
+            params: {
+              name: deploymentParams.name,
+              symbol: deploymentParams.symbol,
+              description: deploymentParams.description,
+            },
+          });
+
+          spinnerERC721.succeed(
+            `ERC721 token deployed at address: ${erc721Address}`,
+          );
+        } catch (error) {
+          spinnerERC721.fail("Failed to deploy ERC721 contract");
+          throw error;
+        }
+        break;
+
+      case "ERC1155":
+        deploymentParams = await inquirer.prompt([
+          {
+            type: "input",
+            name: "name",
+            message: "Enter the name of the ERC1155 collection:",
+          },
+          {
+            type: "input",
+            name: "symbol",
+            message: "Enter the symbol of the ERC1155 collection:",
+          },
+          {
+            type: "input",
+            name: "description",
+            message: "Enter a description for the ERC1155 collection:",
+          },
+        ]);
+
+        const spinnerERC1155 = ora("Deploying ERC1155 contract...").start();
+        try {
+          const erc1155Address = await deployERC1155Contract({
+            chain,
+            client,
+            account,
+            type: "DropERC1155",
+            params: {
+              name: deploymentParams.name,
+              symbol: deploymentParams.symbol,
+              description: deploymentParams.description,
+            },
+          });
+
+          spinnerERC1155.succeed(
+            `ERC1155 token deployed at address: ${erc1155Address}`,
+          );
+        } catch (error) {
+          spinnerERC1155.fail("Failed to deploy ERC1155 contract");
+          throw error;
+        }
+        break;
+
+      default:
+        console.log("Invalid contract type selected.");
+        break;
+    }
+  } catch (error) {
+    console.error("An error occurred during deployment:", error);
+  }
 }
+
+main();
