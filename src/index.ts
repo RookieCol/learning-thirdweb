@@ -1,52 +1,55 @@
 import inquirer from "inquirer";
-import { chains } from "./config"; // Assuming ChainOptions is exported from config
-import { createClient } from "./config";
-import { deployERC20 } from "./deploy/deployERC20";
-//import { deployERC20 } from "./deploy";
+import { chains, createClient } from "./config"; 
+import { deployERC20,deployERC1155,deployERC721 } from "./deploy";
 
-// Define a type for the keys of chains
+
 type ChainKey = keyof typeof chains;
 
 async function main() {
   try {
-    // Prompt the user to select a blockchain network
-    const { chainSelection } = await inquirer.prompt([
+    // Define the chain selection question
+    const chainQuestion: any[] = [
       {
         type: "list",
         name: "chainSelection",
         message: "Select the blockchain network:",
-        choices: Object.keys(chains), // Ensure choices match keys of chains
+        choices: Object.keys(chains).map((key) => ({
+          name: key,
+          value: key,
+        })),
       },
-    ]);
+    ];
 
-    // Assert that chainSelection is a valid key of chains
+    const { chainSelection } = await inquirer.prompt<any>(chainQuestion);
     const selectedChainKey = chainSelection as ChainKey;
     const chain = chains[selectedChainKey];
-
-    // Create client and account
     const { client, account } = createClient();
 
-    // Prompt the user to select a contract type
-    const { contractType } = await inquirer.prompt([
+    const contractQuestion: any[] = [
       {
         type: "list",
         name: "contractType",
         message: "Which type of contract would you like to deploy?",
-        choices: ["ERC20", "ERC721", "ERC1155"],
+        choices: [
+          { name: "ERC20", value: "ERC20" },
+          { name: "ERC721", value: "ERC721" },
+          { name: "ERC1155", value: "ERC1155" },
+        ],
       },
-    ]);
+    ];
 
-    // Deploy the selected contract type
+    const { contractType } = await inquirer.prompt<any>(contractQuestion);
+
     switch (contractType) {
       case "ERC20":
         await deployERC20({ client, account, chain });
         break;
-      /* case "ERC721":
-        await deployERC721({ chain, client, account });
-        break;
-      case "ERC1155":
-        await deployERC1155({ chain, client, account });
-        break; */
+        case "ERC721":
+          await deployERC721({ client, account, chain });
+          break;
+          case "ERC1155":
+        await deployERC1155({ client, account, chain });
+        break; 
       default:
         console.log("Invalid contract type selected.");
         break;

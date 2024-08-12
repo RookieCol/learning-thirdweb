@@ -1,7 +1,7 @@
 {
-  "name": "nodejs-typescript",
+  "name": "learning-thirdweb",
   "version": "1.0.0",
-  "description": "",
+  "description": "Custom ClI build with thirdweb sdk v5",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,7 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/inquirer": "^9.0.7",
     "dotenv": "^16.4.5",
     "inquirer": "^10.1.6",
     "node-fetch": "^3.3.1",
@@ -19,9 +18,10 @@
     "viem": "^2.18.7"
   },
   "devDependencies": {
+    "@types/bun": "latest",
+    "@types/inquirer": "^9.0.7",
     "@types/node": "^20.10.0",
-    "tsx": "^4.7.1",
-    "@types/bun": "latest"
+    "tsx": "^4.7.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
